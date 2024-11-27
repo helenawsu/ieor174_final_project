@@ -6,56 +6,39 @@ import folium
 from streamlit_folium import st_folium
 import branca.colormap as cm 
 # class
-from personas import TimePrioritizer, MoneyPrioritizer, SafetyPrioritizer, Population, TransportCost
-# user adjustble varaibles
-time_to_money_conversion = 25
-uber_cost_per_mile = 2  
+from utilities import TimePrioritizer, MoneyPrioritizer, SafetyPrioritizer, Population, TransportCost
 # constants 
 latitude_miles_per_degree = 69  
 longitude_miles_per_degree = 55.2  
 
-# class Transport_Cost:
-#     def __init__(self, time_cost, monetary_cost, distance_to_bart=None):
-#         self.time_cost = time_cost
-#         self.monetary_cost = monetary_cost
-#         self.dis_to_bart = distance_to_bart
-
-#     def get_cost(self, time_to_money_conversion):
-#         return self.monetary_cost + self.time_cost * time_to_money_conversion
-# class instantiation all unused
-# uber_all = Transport_Cost(1.25, 80)
-# bart_uber_mix = Transport_Cost(2, 30)
-# money_person = MoneyPrioritizer(0)
-# time_person = TimePrioritizer(0)
-# safety_person = SafetyPrioritizer(0)
-population = Population(1/3,1/3,1/3)
+# population = Population(1/3,1/3,1/3)
+# get the cost of uber all way 
 def average_uber_all_cost(population, transportation_cost, time_to_money_conversion):
     tc = transportation_cost
     time_pc = population.time_prioritizer_percentage
     money_pc = population.money_prioritizer_percentage
     safe_pc = population.safety_prioritizer_percentage
     return time_pc * TimePrioritizer(tc).uber_all_cost(time_to_money_conversion) + money_pc * MoneyPrioritizer(tc).uber_all_cost() +  safe_pc * SafetyPrioritizer(tc).uber_all_cost()
+# get the cost of uber to bart station, then bart
 def average_uber_bart_mix_cost(population, transportation_cost, time_to_money_conversion):
     tc = transportation_cost
     time_pc = population.time_prioritizer_percentage
     money_pc = population.money_prioritizer_percentage
     safe_pc = population.safety_prioritizer_percentage
     return time_pc * TimePrioritizer(tc).uber_bart_mix_cost(time_to_money_conversion) + money_pc * MoneyPrioritizer(tc).uber_bart_mix_cost() +  safe_pc * SafetyPrioritizer(tc).uber_bart_mix_cost()
-# map and streamlit things
+
+# map things
 neighborhoods = gpd.read_file("Demographics_By_Census_Tract.geojson")
-
 berryessa_station = Point(-121.8746, 37.3684)  # Berryessa coordinates (lon, lat)
-
 neighborhoods['centroid'] = neighborhoods.geometry.centroid
-
 neighborhoods['distance_to_berryessa_deg'] = neighborhoods['centroid'].distance(berryessa_station)
-
 neighborhoods['distance_to_berryessa_miles'] = neighborhoods['distance_to_berryessa_deg'] * (latitude_miles_per_degree**2 + longitude_miles_per_degree**2)**0.5
-
 if 'population_density' not in neighborhoods.columns:
     neighborhoods['population_density'] = 1000  # Replace with actual data if available
-
 st.title("BART Choice Map with Uber connection ride subsidy")
+
+# user adjustable parameters
+
 subsidy = st.slider("Subsidy Amount ($)", 0, 50, 0)
 time_to_money_conversion = st.slider("Time to Money Conversion ($/hour)", 10, 50, 25)
 uber_cost_per_mile = st.slider("Uber Cost Per Mile ($)", 1, 5, 2)
@@ -64,35 +47,27 @@ st.write("### Adjust Population Percentages")
 time_pc = st.slider("Time Prioritizer (%)", 0.0, 1.0, 1 / 3, step=0.01)
 money_pc = st.slider("Money Prioritizer (%)", 0.0, 1.0, 1 / 3, step=0.01)
 
-# Safety prioritizer is calculated to ensure the sum equals 1
+# Safety prioritizer is calculated to ensure the sum of percentages in population equals 1
 safe_pc = 1.0 - time_pc - money_pc
-
 if safe_pc < 0 or safe_pc > 1:
     st.error("Invalid combination. Adjust Time and Money prioritizers so their sum is ≤ 1.")
     safe_pc = 0
-
 st.write(f"Time Prioritizer: {time_pc:.2f}, Money Prioritizer: {money_pc:.2f}, Safety Prioritizer: {safe_pc:.2f}")
 
 # Population object
 population = Population(time_pc, money_pc, safe_pc)
-# time_pc = population.time_prioritizer_percentage
-# money_pc = population.money_prioritizer_percentage
-# safe_pc = population.safety_prioritizer_percentage
 
+# populate neighborhoods table
 neighborhoods['cost_uber_all'] = average_uber_all_cost(Population(time_pc,money_pc,safe_pc), TransportCost(uber_all_time=1.25, uber_bart_mix_time=2, safety_cost=safety_cost, uber_cost_per_mile=uber_cost_per_mile, uber_distance=neighborhoods['distance_to_berryessa_miles']), time_to_money_conversion)
 neighborhoods['cost_bart_uber_mix'] = average_uber_bart_mix_cost(Population(time_pc,money_pc,safe_pc), TransportCost(uber_all_time=1.25, uber_bart_mix_time=2, safety_cost=safety_cost, uber_cost_per_mile=uber_cost_per_mile, uber_distance=neighborhoods['distance_to_berryessa_miles']), time_to_money_conversion) - subsidy
-
 neighborhoods['percent_choosing_bart_uber_mix'] = 100 * (neighborhoods['cost_uber_all'] - neighborhoods['cost_bart_uber_mix']) / neighborhoods['cost_uber_all']
 neighborhoods['percent_choosing_bart_uber_mix'] = neighborhoods['percent_choosing_bart_uber_mix'].clip(lower=0, upper=100)  # Cap values between 0 and 100%
 
-
+# streamlit map things
 m = folium.Map(location=[37.3684, -121.8746], zoom_start=11)
-
 colormap = cm.LinearColormap(['red', 'yellow', 'green'], vmin=0, vmax=100)
 colormap.caption = "Percentage Choosing BART with Uber connection ride subsidy"  # Set a caption for the legend
-
 m = folium.Map(location=[37.3684, -121.8746], zoom_start=11)
-
 for _, row in neighborhoods.iterrows():
     folium.Circle(
         location=[row['centroid'].y, row['centroid'].x],
