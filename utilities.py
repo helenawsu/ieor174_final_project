@@ -1,11 +1,12 @@
 class TransportCost:
-    def __init__(self, uber_all_time, uber_bart_mix_time, safety_cost, uber_cost_per_mile, uber_distance=0, uber_all_distance, traffic_time = 0):
+    def __init__(self, uber_all_time, uber_bart_mix_time, safety_cost, uber_cost_per_mile, uber_distance=0, uber_all_distance, bart_cost=7.2, traffic_time = 0):
         self.uber_all_time = uber_all_time
         self.uber_bart_mix_time = uber_bart_mix_time
         self.uber_distance = uber_distance # used for connection rides
         self.uber_cost_per_mile = uber_cost_per_mile # used for connection rides / short rides, cannot apply to uber all options
         self.monetary_cost = uber_cost_per_mile * uber_distance
         self.safety_cost = safety_cost
+        self.bart_cost = bart_cost
 
         self.uber_all_cost = 4.15 + .65*.2*uber_all_distance + .65*traffic_time
     def get_cost(self, time_to_money_conversion):
@@ -42,7 +43,7 @@ class TimePrioritizer(Personas):
         # this is hard coded, change later
         return self.uber_all_cost + self.uber_all_time * time_to_money_conversion
     def uber_bart_mix_cost(self, time_to_money_conversion):
-        return self.uber_cost_per_mile * self.distance + self.uber_bart_mix_time * time_to_money_conversion
+        return self.uber_cost_per_mile * self.distance + self.uber_bart_mix_time * time_to_money_conversion + self.bart_cost
 
 
 
@@ -53,7 +54,7 @@ class MoneyPrioritizer(Personas):
         # this is hard coded, change later
         return self.uber_all_cost
     def uber_bart_mix_cost(self):
-        return self.uber_cost_per_mile * self.distance
+        return self.uber_cost_per_mile * self.distance + self.bart_cost
 
 
 class SafetyPrioritizer(Personas):
@@ -63,7 +64,7 @@ class SafetyPrioritizer(Personas):
         # this is hard coded, change later
         return self.uber_all_cost + self.safety_cost
     def uber_bart_mix_cost(self):
-        return self.uber_cost_per_mile * self.distance + self.safety_cost
+        return self.uber_cost_per_mile * self.distance + self.safety_cost + self.bart_cost
 
 
 # time_persona = TimePrioritizer(5, 10, 3)
