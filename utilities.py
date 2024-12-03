@@ -2,8 +2,8 @@ class TransportCost:
     def __init__(self, uber_all_time, uber_bart_mix_time, safety_cost, uber_cost_per_mile, uber_distance=0):
         self.uber_all_time = uber_all_time
         self.uber_bart_mix_time = uber_bart_mix_time
-        self.uber_distance = uber_distance
-        self.uber_cost_per_mile = uber_cost_per_mile
+        self.uber_distance = uber_distance # used for connection rides
+        self.uber_cost_per_mile = uber_cost_per_mile # used for connection rides / short rides, cannot apply to uber all options
         self.monetary_cost = uber_cost_per_mile * uber_distance
         self.safety_cost = safety_cost
 
