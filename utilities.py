@@ -1,16 +1,33 @@
+from abc import ABC, abstractmethod
+
+from abc import ABC, abstractmethod
+
+
+# Base class for transport costs
 class TransportCost:
-    def __init__(self, uber_all_time, uber_bart_mix_time, safety_cost, uber_cost_per_mile, uber_all_distance, uber_distance=0,  bart_cost=7.2, traffic_time = 0):
-        self.uber_all_time = uber_all_time
-        self.uber_bart_mix_time = uber_bart_mix_time
-        self.uber_distance = uber_distance # used for connection rides
-        self.uber_cost_per_mile = uber_cost_per_mile # used for connection rides / short rides, cannot apply to uber all options
-        self.monetary_cost = uber_cost_per_mile * uber_distance
+    def __init__(self, time, distance, traffic_time=0):
+        self.time = time
+        self.distance = distance
+        self.traffic_time = traffic_time
+        self.uber_cost = self.calculate_uber_cost()
+
+    def calculate_uber_cost(self):
+        return 4.15 + 0.65 * 0.2 * self.distance + 0.65 * self.traffic_time
+
+    def get_cost(self):
+        return self.uber_cost
+class UberAllCost(TransportCost):
+    def __init__(self, time, distance, traffic_time=0):
+        super().__init__(time, distance, traffic_time)
+        self.safety_cost = 0
+class UberBartMixCost(TransportCost):
+    def __init__(self, time, safety_cost, distance=0, bart_cost=7.2, traffic_time=0):
+        super().__init__(time, distance, traffic_time)
         self.safety_cost = safety_cost
         self.bart_cost = bart_cost
 
-        self.uber_all_cost = 4.15 + .65*.2*uber_all_distance + .65*traffic_time
-    def get_cost(self, time_to_money_conversion):
-        return self.monetary_cost + self.time_cost * time_to_money_conversion
+    def get_cost(self):
+        return super().get_cost() + self.bart_cost
 class Population:
     def __init__(self, TimePrioritizer_percentage: float, MoneyPrioritizer_percentage: float, SafetyPrioritizer_percentage: float):
         total_percentage = TimePrioritizer_percentage + MoneyPrioritizer_percentage + SafetyPrioritizer_percentage
@@ -25,55 +42,25 @@ class Population:
         self.time_prioritizer_percentage = TimePrioritizer_percentage
         self.money_prioritizer_percentage = MoneyPrioritizer_percentage
         self.safety_prioritizer_percentage = SafetyPrioritizer_percentage
-class Personas:
-    def __init__(self, transpotation_cost):
-        self.transport_cost = transpotation_cost
-        self.monetary_cost = self.transport_cost.monetary_cost
-        self.uber_all_time = self.transport_cost.uber_all_time
-        self.uber_bart_mix_time = self.transport_cost.uber_bart_mix_time
-        self.distance = self.transport_cost.uber_distance
-        self.uber_cost_per_mile = self.transport_cost.uber_cost_per_mile
-        self.safety_cost = self.transport_cost.safety_cost
-    def __str__(self):
-        return (f"Time Cost: {self.placeholder}")
+class Personas(ABC):
+    def __init__(self, transportation_cost):
+        self.transportation_cost = transportation_cost
+    @abstractmethod
+    def get_cost(self, time_to_money_conversion=0):
+        pass
+        #return self.transportation_cost.get_cost() + self.transportation_cost.safety_cost + self.transportation_cost.time * time_to_money_conversion
+
+
 class TimePrioritizer(Personas):
-    def __init__(self, transpotation_cost):
-        super().__init__(transpotation_cost)
-    def uber_all_cost(self, time_to_money_conversion):
-        # this is hard coded, change later
-        return self.uber_all_cost + self.uber_all_time * time_to_money_conversion
-    def uber_bart_mix_cost(self, time_to_money_conversion):
-        return self.uber_cost_per_mile * self.distance + self.uber_bart_mix_time * time_to_money_conversion + self.bart_cost
-
-
-
+    def get_cost(self, time_to_money_conversion):
+        return (
+            self.transportation_cost.get_cost()
+            + self.transportation_cost.time * time_to_money_conversion
+        )
 class MoneyPrioritizer(Personas):
-    def __init__(self, transpotation_cost):
-        super().__init__(transpotation_cost)
-    def uber_all_cost(self):
-        # this is hard coded, change later
-        return self.uber_all_cost
-    def uber_bart_mix_cost(self):
-        return self.uber_cost_per_mile * self.distance + self.bart_cost
-
-
+    def get_cost(self, time_to_money_conversion=0):
+        return self.transportation_cost.get_cost()
 class SafetyPrioritizer(Personas):
-    def __init__(self, transpotation_cost):
-        super().__init__(transpotation_cost)
-    def uber_all_cost(self):
-        # this is hard coded, change later
-        return self.uber_all_cost + self.safety_cost
-    def uber_bart_mix_cost(self):
-        return self.uber_cost_per_mile * self.distance + self.safety_cost + self.bart_cost
+    def get_cost(self, time_to_money_conversion=0):
+        return self.transportation_cost.get_cost() + self.transportation_cost.safety_cost
 
-
-# time_persona = TimePrioritizer(5, 10, 3)
-# money_persona = MoneyPrioritizer(6, 2, 4)
-# safety_persona = SafetyPrioritizer(8, 12, 1)
-
-# print(time_persona)
-# print(time_persona.prioritize())
-# print(money_persona)
-# print(money_persona.prioritize())
-# print(safety_persona)
-# print(safety_persona.prioritize())

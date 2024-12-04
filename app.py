@@ -8,13 +8,16 @@ import branca.colormap as cm
 import pandas as pd
 
 # class
-from utilities import TimePrioritizer, MoneyPrioritizer, SafetyPrioritizer, Population, TransportCost
+from utilities import TimePrioritizer, MoneyPrioritizer, SafetyPrioritizer, Population, TransportCost, UberAllCost, UberBartMixCost
 # constants 
 latitude_miles_per_degree = 69  
 longitude_miles_per_degree = 55.2
 
 # average incidents by hour
-incidents = pd.read_csv("./incidents.csv")
+try:
+    incidents = pd.read_csv("incidents.csv")
+except FileNotFoundError:
+    st.error("Incidents CSV file not found.")
 incidents.set_index('Hour', inplace=True)
 incidents = incidents.T
 incidents_mean = incidents.mean()
@@ -22,22 +25,25 @@ scaling_factor = 1 + (incidents_mean - incidents_mean.min()) / (incidents_mean.m
 
 # population = Population(1/3,1/3,1/3)
 # get the cost of uber all way 
-def average_uber_all_cost(population, transportation_cost, time_to_money_conversion):
-    tc = transportation_cost
+def average_uber_all_cost(population, uber_all, time_to_money_conversion):
+    uber_all = uber_all
     time_pc = population.time_prioritizer_percentage
     money_pc = population.money_prioritizer_percentage
     safe_pc = population.safety_prioritizer_percentage
-    return time_pc * TimePrioritizer(tc).uber_all_cost(time_to_money_conversion) + money_pc * MoneyPrioritizer(tc).uber_all_cost() +  safe_pc * SafetyPrioritizer(tc).uber_all_cost()
+    return time_pc * TimePrioritizer(uber_all).get_cost(time_to_money_conversion) + money_pc * MoneyPrioritizer(uber_all).get_cost() +  safe_pc * SafetyPrioritizer(uber_all).get_cost() 
 # get the cost of uber to bart station, then bart
-def average_uber_bart_mix_cost(population, transportation_cost, time_to_money_conversion):
-    tc = transportation_cost
+def average_uber_bart_mix_cost(population, uber_bart_mix, time_to_money_conversion):
+    uber_bart_mix = uber_bart_mix
     time_pc = population.time_prioritizer_percentage
     money_pc = population.money_prioritizer_percentage
     safe_pc = population.safety_prioritizer_percentage
-    return time_pc * TimePrioritizer(tc).uber_bart_mix_cost(time_to_money_conversion) + money_pc * MoneyPrioritizer(tc).uber_bart_mix_cost() +  safe_pc * SafetyPrioritizer(tc).uber_bart_mix_cost()
+    return time_pc * TimePrioritizer(uber_bart_mix).get_cost(time_to_money_conversion) + money_pc * MoneyPrioritizer(uber_bart_mix).get_cost() +  safe_pc * SafetyPrioritizer(uber_bart_mix).get_cost() 
 
 # map things
-neighborhoods = gpd.read_file("Demographics_By_Census_Tract.geojson")
+try:
+    neighborhoods = gpd.read_file("Demographics_By_Census_Tract.geojson")
+except FileNotFoundError:
+    st.error("GeoJSON file not found.")
 berryessa_station = Point(-121.8746, 37.3684)  # Berryessa coordinates (lon, lat)
 neighborhoods['centroid'] = neighborhoods.geometry.centroid
 neighborhoods['distance_to_berryessa_deg'] = neighborhoods['centroid'].distance(berryessa_station)
@@ -64,13 +70,16 @@ if safe_pc < 0 or safe_pc > 1:
     safe_pc = 0
 st.write(f"Time Prioritizer: {time_pc:.2f}, Money Prioritizer: {money_pc:.2f}, Safety Prioritizer: {safe_pc:.2f}")
 
-# Population object
-population = Population(time_pc, money_pc, safe_pc)
-
+# example instantiation
+# population = Population(time_pc, money_pc, safe_pc)
+# uac = UberAllCost(time, distance, traffic_time)
+# ubmc = UberBartMixCost(time, safety_cost, distance=0, bart_cost=7.2, traffic_time=0)
 # populate neighborhoods table
 time_scaling_factor = scaling_factor[hour_of_day]
-neighborhoods['cost_uber_all'] = average_uber_all_cost(Population(time_pc,money_pc,safe_pc), TransportCost(uber_all_time=1.25*time_scaling_factor, uber_bart_mix_time=2*time_scaling_factor, safety_cost=safety_cost, uber_cost_per_mile=uber_cost_per_mile, uber_distance=neighborhoods['distance_to_berryessa_miles']), time_to_money_conversion)
-neighborhoods['cost_bart_uber_mix'] = average_uber_bart_mix_cost(Population(time_pc,money_pc,safe_pc), TransportCost(uber_all_time=1.25*time_scaling_factor, uber_bart_mix_time=2*time_scaling_factor, safety_cost=safety_cost, uber_cost_per_mile=uber_cost_per_mile, uber_distance=neighborhoods['distance_to_berryessa_miles']), time_to_money_conversion) - subsidy
+# did instantiation in line because im not sure whether streamlit would live update slider variables if instantiated prior. should try
+neighborhoods['cost_uber_all'] = average_uber_all_cost(Population(time_pc,money_pc,safe_pc), UberAllCost(1.25*scaling_factor[hour_of_day], 43+neighborhoods['distance_to_berryessa_miles'], 0.25*scaling_factor[hour_of_day]), time_to_money_conversion)
+# assume no traffic for uber_bart_mix yet, should fix
+neighborhoods['cost_bart_uber_mix'] = average_uber_bart_mix_cost(Population(time_pc,money_pc,safe_pc), UberBartMixCost(2, safety_cost, neighborhoods['distance_to_berryessa_miles'], bart_cost=7.2, traffic_time=0), time_to_money_conversion) - subsidy
 neighborhoods['percent_choosing_bart_uber_mix'] = 100 * (neighborhoods['cost_uber_all'] - neighborhoods['cost_bart_uber_mix']) / neighborhoods['cost_uber_all']
 neighborhoods['percent_choosing_bart_uber_mix'] = neighborhoods['percent_choosing_bart_uber_mix'].clip(lower=0, upper=100)  # Cap values between 0 and 100%
 
