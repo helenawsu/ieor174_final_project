@@ -1,5 +1,5 @@
 class TransportCost:
-    def __init__(self, uber_all_time, uber_bart_mix_time, safety_cost, uber_cost_per_mile, uber_distance=0, uber_all_distance, bart_cost=7.2, traffic_time = 0):
+    def __init__(self, uber_all_time, uber_bart_mix_time, safety_cost, uber_cost_per_mile, uber_all_distance, uber_distance=0,  bart_cost=7.2, traffic_time = 0):
         self.uber_all_time = uber_all_time
         self.uber_bart_mix_time = uber_bart_mix_time
         self.uber_distance = uber_distance # used for connection rides
