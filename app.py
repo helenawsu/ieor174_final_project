@@ -68,7 +68,7 @@ if 'POPDENSITY' not in neighborhoods.columns:
 else:
     neighborhoods['population_density'] = neighborhoods.POPDENSITY
 with st.container():
-    st.title("BART Choice Map with Uber connection ride subsidy")
+    st.title("Effect of Uber Subsidy on Bart Ridership")
     col1, col2 = st.columns(2)
     with col1:
         # keep in mind that the fare from BE to BK is only $7.2, no point going beyond 8
