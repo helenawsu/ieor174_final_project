@@ -7,7 +7,7 @@ from streamlit_folium import st_folium
 import branca.colormap as cm 
 import pandas as pd
 import numpy as np
-
+import scipy
 # class
 from utilities import Population, UberAll, UberBartMix, Drive
 # constants 
@@ -107,10 +107,9 @@ neighborhoods['percent_choosing_bart'] = (exp_bart_uber_mix / total_exp_without_
 # neighborhoods['percent_choosing_bart'] = neighborhoods['percent_choosing_bart'].clip(lower=0, upper=100)  # Cap values between 0 and 100%
 
 # streamlit map things
-m = folium.Map(location=[37.3684, -121.8746], zoom_start=11)
+m = folium.Map(location=[37.3684, -121.8746], zoom_start=11, height="80%")
 colormap = cm.LinearColormap(['red', 'yellow', 'green'], vmin=0, vmax=1)
 colormap.caption = "Percentage Choosing BART with Uber connection ride subsidy"  # Set a caption for the legend
-m = folium.Map(location=[37.3684, -121.8746], zoom_start=11)
 # Ensure population_density column is used to scale circle size
 # Normalize the population size for reasonable circle radii
 population_max = neighborhoods['population_density'].max()
