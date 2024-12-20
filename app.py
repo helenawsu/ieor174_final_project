@@ -72,7 +72,7 @@ with st.container():
     col1, col2 = st.columns(2)
     with col1:
         # keep in mind that the fare from BE to BK is only $7.2, no point going beyond 8
-        subsidy = st.slider("Subsidy Amount ($)", 0, 8, 0)
+        subsidy = st.slider("Subsidy Amount ($)", 0, 8, 0, step=0.01)
         time_to_money_conversion = st.slider("Time to Money Conversion ($/hour)", 0, 50, 25)
         car_pc = st.slider("Percentage of Population who own car (%)", 0.0, 1.0, 1 / 2, step=0.01)
 
