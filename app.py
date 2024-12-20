@@ -29,7 +29,7 @@ st.markdown(
     gap: 0rem;
     }
     h1 {
-        font-size: 1.75rem;
+        font-size: 1.75rem !important;
          margin: 0rem; /* Reduce title size */
     }
     </style>
