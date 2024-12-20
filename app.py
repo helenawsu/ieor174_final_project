@@ -105,7 +105,7 @@ ub = UberBartMix(time_to_money_conversion, neighborhoods['distance_to_berryessa_
 neighborhoods['cost_uber_all'] = ua.get_cost(hour_of_day, is_weekday)
 neighborhoods['cost_bart_uber'] = ub.get_cost() - subsidy
 neighborhoods['cost_bart_uber_no_subsidy'] = ub.get_cost() 
-neighborhoods['cost_drive'] = Drive(time_to_money_conversion, inconvenience_fee, neighborhoods['distance_to_berryessa_miles']).get_cost(hour_of_day, is_weekday)
+neighborhoods['cost_drive'] = Drive(time_to_money_conversion, inconvenience_fee).get_cost(hour_of_day, is_weekday)
 
 beta = 0.3 # emperically chosen it produces a reasonable logistic function
 exp_bart_uber_mix = np.exp(-beta * neighborhoods['cost_bart_uber'])

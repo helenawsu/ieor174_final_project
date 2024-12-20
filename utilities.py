@@ -124,16 +124,6 @@ class UberBartMix:
         return 120 / 60  # in hour
 
     def get_cost(self):
-<<<<<<< HEAD
-        return self.safety_cost + self.get_fare() + self.time_to_cost_factor * self.get_time()
-    
-class Drive():
-    def __init__(self, time_to_cost_factor, inconvenience_fee, distance):
-        self.time_to_cost_factor = time_to_cost_factor
-        self.inconvenience_fee = inconvenience_fee
-        self.ua = UberAll(self.time_to_cost_factor, distance)
-        self.gas_cost = 10 # At 50 miles, 23 miles per gallon, $4.5/gallon 
-=======
         return (
             self.safety_cost
             + self.get_fare()
@@ -145,10 +135,9 @@ class Drive:
     def __init__(self, time_to_cost_factor, inconvenience_fee):
         self.time_to_cost_factor = time_to_cost_factor
         self.inconvenience_fee = inconvenience_fee
-        self.ua = UberAll(self.time_to_cost_factor)
+        self.ua = UberAll(self.time_to_cost_factor, distance=0)
         self.gas_cost = 10  # At 50 miles, 23 miles per gallon, $4.5/gallon
 
->>>>>>> af71d04fe2e30491b6b3d2d2c8437967b0d9a77e
     def get_time(self, hour, is_weekday=True):
         return self.ua.time_interpolator(hour, is_weekday)  # unit is hour
 
