@@ -1,0 +1,5 @@
+streamlit
+pandas
+numpy
+matplotlib
+# todo there is more
