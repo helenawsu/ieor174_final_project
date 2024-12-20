@@ -32,13 +32,10 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Title
 st.title("Effect of Uber Subsidy on Bart Ridership")
 
-# Create a two-column layout
 left_col, right_col = st.columns([1, 1])
 
-# Left Column: Parameters (Top) and Results (Bottom)
 with left_col:
     # Parameters Section
     # st.header("Parameters")
@@ -68,7 +65,7 @@ with left_col:
     )
 
     if "POPTOTAL" not in neighborhoods.columns:
-        neighborhoods["population"] = 1000  # Replace with actual data if available
+        neighborhoods["population"] = 1000 
     else:
         neighborhoods["population"] = neighborhoods.POPTOTAL
 
@@ -113,7 +110,6 @@ with left_col:
     increased_revenue = (7.2 - subsidy) * increased_ridership
 
     # Results Section
-    # st.header("Results")
     col1, col2 = st.columns(2)
     with col1:
         st.metric("% Choose BART With Subsidy", f"{average_percent_with_subsidy:.2f}%")
@@ -124,7 +120,6 @@ with left_col:
         st.metric("Ridership Without Subsidy", f"{total_rides_no_sub}")
         st.metric("Revenue Increased", f"${int(increased_revenue)}")
 
-# Right Column: Map
 with right_col:
     # st.header("Map")
     m = folium.Map(location=[37.3684, -121.8746], zoom_start=11)
@@ -148,7 +143,7 @@ st.write("### Notes")
 st.markdown("- Subsidies at $4 per ride during non-rush hours on weekends maximize BART revenue increased. During rush hours, subsidies have a diminished effect since many users already prefer BART due to high traffic congestion.")
 st.markdown("- Ridership with no subsidy is based on past 12 months (12/2023 - 11/2024, inclusive) ridership count with origin Berryessa and destination Downtown Berkeley.")
 st.markdown("- Costs are converted to probability with the weighted average of two logistic functions of beta = 0.3, one carless (bart vs uber), one with car(bart vs uber vs drive).")
-st.markdown("- Revenue increased is calculated with the difference between the percentage of choosing BART with and without subsidy, where without subsidy is the past 12 months ridership count * BART fare.")
+st.markdown("- Revenue increased is calculated with the difference between the percentage of choosing BART with and without subsidy, where without subsidy is the past 12 months ridership count (Berryessa, Downtown Berkeley) * BART fare.")
 
 
 st.write("### Debug")
