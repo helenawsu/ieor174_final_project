@@ -29,7 +29,7 @@ st.markdown(
     gap: 0rem;
     }
     h1 {
-        font-size: 1.75rem !important;
+        font-size: 2rem !important;
          margin: 0rem; /* Reduce title size */
     }
     </style>
@@ -63,10 +63,10 @@ berryessa_station = Point(-121.8746, 37.3684)  # Berryessa coordinates (lon, lat
 neighborhoods['centroid'] = neighborhoods.geometry.centroid
 neighborhoods['distance_to_berryessa_deg'] = neighborhoods['centroid'].distance(berryessa_station)
 neighborhoods['distance_to_berryessa_miles'] = neighborhoods['distance_to_berryessa_deg'] * (latitude_miles_per_degree**2 + longitude_miles_per_degree**2)**0.5
-if 'POPDENSITY' not in neighborhoods.columns:
-    neighborhoods['population_density'] = 1000  # Replace with actual data if available
+if 'POPTOTAL' not in neighborhoods.columns:
+    neighborhoods['population'] = 1000  # Replace with actual data if available
 else:
-    neighborhoods['population_density'] = neighborhoods.POPDENSITY
+    neighborhoods['population'] = neighborhoods.POPTOTAL
 with st.container():
     st.title("Effect of Uber Subsidy on Bart Ridership")
     col1, col2 = st.columns(2)
@@ -81,8 +81,8 @@ with st.container():
         hour_of_day = st.slider("Hour of Day (5AM-21PM)", 5, 21, 17, step=1)
         inconvenience_fee = st.slider("Driving Inconvenience Cost ($)", 0, 100, 20, step=1)
     is_weekday = st.checkbox("Is Weekday?", value=True)
-    if hour_of_day in [7, 8, 9, 16, 17, 18]:  # Highlight rush hours
-        st.write(f"Selected Hour is Rush Hour 🚦")
+    # if hour_of_day in [7, 8, 9, 16, 17, 18]:  # Highlight rush hours
+    #     st.write(f"Selected Hour is Rush Hour 🚦")
 
 
 time_scaling_factor = scaling_factor[hour_of_day]
@@ -91,29 +91,59 @@ ua = UberAll(time_to_money_conversion, neighborhoods['distance_to_berryessa_mile
 ub = UberBartMix(time_to_money_conversion, neighborhoods['distance_to_berryessa_miles'], safety_cost)
 neighborhoods['cost_uber_all'] = ua.get_cost(hour_of_day, is_weekday)
 neighborhoods['cost_bart_uber'] = ub.get_cost() - subsidy
-neighborhoods['cost_bart_uber_baseline'] = neighborhoods['cost_bart_uber'] + subsidy
+neighborhoods['cost_bart_uber_no_subsidy'] = ub.get_cost() 
 neighborhoods['cost_drive'] = Drive(time_to_money_conversion, inconvenience_fee).get_cost(hour_of_day, is_weekday)
 
 beta = 0.25 # emperically chosen it produces a reasonable logistic function
 exp_bart_uber_mix = np.exp(-beta * neighborhoods['cost_bart_uber'])
+exp_bart_uber_no_subsidy = np.exp(-beta * neighborhoods['cost_bart_uber_no_subsidy'])
 exp_uber_all = np.exp(-beta * neighborhoods['cost_uber_all'])
 # for people without car
 total_exp_without_car = exp_bart_uber_mix + exp_uber_all
+total_exp_without_car_nosub = exp_bart_uber_no_subsidy + exp_uber_all
+
 # for people with car
 exp_drive = np.exp(-beta * neighborhoods['cost_drive'])
 total_exp_with_car = exp_bart_uber_mix + exp_uber_all + exp_drive
-neighborhoods['percent_choosing_bart'] = (exp_bart_uber_mix / total_exp_without_car) 
+total_exp_with_car_nosub = exp_bart_uber_no_subsidy + exp_uber_all + exp_drive
+
+# neighborhoods['percent_choosing_bart'] = (exp_bart_uber_mix / total_exp_without_car) 
 neighborhoods['percent_choosing_bart'] = (exp_bart_uber_mix / total_exp_without_car) * (1-car_pc) + (exp_bart_uber_mix / total_exp_with_car) * car_pc
+neighborhoods['percent_choosing_bart_no_subsidy'] = (exp_bart_uber_no_subsidy / total_exp_without_car_nosub) * (1-car_pc) + (exp_bart_uber_no_subsidy / total_exp_with_car_nosub) * car_pc
+total_population = neighborhoods['population'].sum()
+
 # neighborhoods['percent_choosing_bart'] = neighborhoods['percent_choosing_bart'].clip(lower=0, upper=100)  # Cap values between 0 and 100%
+average_percent_with_subsidy = (
+    (neighborhoods['percent_choosing_bart'] * neighborhoods['population']).sum()
+    / total_population * 100
+)
+average_percent_without_subsidy = (
+    (neighborhoods['percent_choosing_bart_no_subsidy'] * neighborhoods['population']).sum()
+    / total_population * 100
+)
+
+st.write("### Results")
+st.write(f"**With Subsidy:** {average_percent_with_subsidy:.2f}%")
+st.write(f"**Without Subsidy:** {average_percent_without_subsidy:.2f}%")
+total_rides_no_sub = 30251
+total_rides = 30251 * (1 + average_percent_with_subsidy/100 - average_percent_without_subsidy/100)
+st.write(f"**Ridership With Subsidy:** {int(total_rides)}")
+st.write(f"**Ridership Without Subsidy:** {total_rides_no_sub}")
+increased_ridership= total_rides - total_rides_no_sub
+increased_revenue = (7.2 - subsidy) * increased_ridership
+st.write(f"**Ridership Increased:** {int(increased_ridership)}")
+st.write(f"**Revenue Increased:** ${int(increased_revenue)}")
+
+
 
 # streamlit map things
-m = folium.Map(location=[37.3684, -121.8746], zoom_start=11, height="80%")
+m = folium.Map(location=[37.3684, -121.8746], zoom_start=11)
 colormap = cm.LinearColormap(['red', 'yellow', 'green'], vmin=0, vmax=1)
 colormap.caption = "Percentage Choosing BART with Uber connection ride subsidy"  # Set a caption for the legend
 # Ensure population_density column is used to scale circle size
 # Normalize the population size for reasonable circle radii
-population_max = neighborhoods['population_density'].max()
-neighborhoods['circle_radius'] = neighborhoods['population_density'] / population_max * 2000  # Scale factor for visibility
+population_max = neighborhoods['population'].max()
+neighborhoods['circle_radius'] = neighborhoods['population'] / 10  # Scale factor for visibility
 
 # Add circles to the map with size proportional to the population
 for _, row in neighborhoods.iterrows():
@@ -127,7 +157,8 @@ for _, row in neighborhoods.iterrows():
     ).add_to(m)
 colormap.add_to(m)
 
-
 st_folium(m, width=700, height=500)
+
+
 st.write("### Neighborhood Probabilities")
-st.dataframe(neighborhoods[['cost_bart_uber', 'cost_uber_all', 'cost_drive', 'percent_choosing_bart']])
+st.dataframe(neighborhoods[['cost_bart_uber', 'cost_uber_all', 'cost_drive', 'percent_choosing_bart_no_subsidy', 'percent_choosing_bart']])
