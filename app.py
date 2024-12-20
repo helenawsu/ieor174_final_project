@@ -20,6 +20,11 @@ st.set_page_config(layout="wide")
 st.markdown(
     """
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Ubuntu', sans-serif;
+    }
     .block-container {
         padding-top: 1rem !important; /* Ensure no padding at the top */
     }
@@ -144,6 +149,7 @@ st.markdown("- Subsidies at $4 per ride during non-rush hours on weekends maximi
 st.markdown("- Ridership with no subsidy is based on past 12 months (12/2023 - 11/2024, inclusive) ridership count with origin Berryessa and destination Downtown Berkeley.")
 st.markdown("- Costs are converted to probability with the weighted average of two logistic functions of beta = 0.3, one carless (bart vs uber), one with car(bart vs uber vs drive).")
 st.markdown("- Revenue increased is calculated with the difference between the percentage of choosing BART with and without subsidy, where without subsidy is the past 12 months ridership count (Berryessa, Downtown Berkeley) * BART fare.")
+st.markdown("- Driving Inconvenience Cost includes parking, toll, and misc. cost such as driving in terms of energy.")
 
 
 st.write("### Debug")
