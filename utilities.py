@@ -164,21 +164,3 @@ class Personas(ABC):
         # return self.transportation_cost.get_cost() + self.transportation_cost.safety_cost + self.transportation_cost.time * time_to_money_conversion
 
 
-class TimePrioritizer(Personas):
-    def get_cost(self, time_to_money_conversion):
-        return (
-            self.transportation_cost.get_cost()
-            + self.transportation_cost.time * time_to_money_conversion
-        )
-
-
-class MoneyPrioritizer(Personas):
-    def get_cost(self, time_to_money_conversion=0):
-        return self.transportation_cost.get_cost()
-
-
-class SafetyPrioritizer(Personas):
-    def get_cost(self, time_to_money_conversion=0):
-        return (
-            self.transportation_cost.get_cost() + self.transportation_cost.safety_cost
-        )
