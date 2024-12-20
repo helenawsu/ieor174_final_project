@@ -6,6 +6,7 @@ import numpy as np
 import numpy as np
 from scipy.interpolate import Akima1DInterpolator
 
+
 class UberAll:
     def __init__(self, time_to_cost_factor, distance=0):
         # Start: Downtown San Jose
@@ -37,10 +38,10 @@ class UberAll:
         # Convert time strings to numerical values (5:00 AM = 5, 9:00 PM = 21)
         time_numeric = np.array([5, 8, 13, 17, 21])
         interpolator = Akima1DInterpolator(time_numeric, y)
-        
+
         if hour < 5 or hour > 21:
             raise ValueError("Hour must be between 5 and 21 (inclusive).")
-        
+
         return interpolator(hour)
 
     def fare_interpolator(self, hour, is_weekday=True):
@@ -74,9 +75,13 @@ class UberAll:
         avg_time = np.mean(data, axis=0)
         # Interpolate the average time for the given hour
         return self.interpolate_line(self.time_data["time"], avg_time, hour) / 60
-    
+
     def get_cost(self, hour, is_weekday):
-        return self.distance + self.fare_interpolator(hour, is_weekday) + self.time_interpolator(hour, is_weekday) * self.time_to_cost_factor
+        return (
+            self.distance
+            + self.fare_interpolator(hour, is_weekday)
+            + self.time_interpolator(hour, is_weekday) * self.time_to_cost_factor
+        )
 
 
 # Base class for transport costs
@@ -88,49 +93,75 @@ class TransportCost:
         self.uber_cost = self.calculate_uber_cost()
 
     def calculate_uber_cost(self):
-        return 4.15 + 0.52 * 5 * self.distance # 0.52 is emprically scaled down from 0.65 which is sf taxi rates
+        return (
+            4.15 + 0.52 * 5 * self.distance
+        )  # 0.52 is emprically scaled down from 0.65 which is sf taxi rates
 
     def get_cost(self):
         return self.uber_cost
+
+
 class UberAllCost(TransportCost):
     def __init__(self, time, distance, traffic_time=0):
         super().__init__(time, distance, traffic_time)
         self.safety_cost = 0
-class UberBartMix():
+
+
+class UberBartMix:
     def __init__(self, time_to_cost_factor, distance, safety_cost, bart_cost=7.2):
         self.safety_cost = safety_cost
         self.bart_cost = bart_cost
         self.time_to_cost_factor = time_to_cost_factor
         self.distance = distance
+
     def get_fare(self):
-        return self.bart_cost + 4.15 + 0.52 * 5 * self.distance # 0.52 is emprically scaled down from 0.65 which is sf taxi rates
+        return (
+            self.bart_cost + 4.15 + 0.52 * 5 * self.distance
+        )  # 0.52 is emprically scaled down from 0.65 which is sf taxi rates
+
     def get_time(self):
         # breakdown: bart 60min, uber to bart 30min, rest 30min for waiting / to final dest
-        return 120/60 # in hour
+        return 120 / 60  # in hour
+
     def get_cost(self):
-        return self.safety_cost + self.get_fare() + self.time_to_cost_factor * self.get_time()
-    
-class Drive():
+        return (
+            self.safety_cost
+            + self.get_fare()
+            + self.time_to_cost_factor * self.get_time()
+        )
+
+
+class Drive:
     def __init__(self, time_to_cost_factor, inconvenience_fee):
         self.time_to_cost_factor = time_to_cost_factor
         self.inconvenience_fee = inconvenience_fee
         self.ua = UberAll(self.time_to_cost_factor)
-        self.gas_cost = 10 # At 50 miles, 23 miles per gallon, $4.5/gallon 
+        self.gas_cost = 10  # At 50 miles, 23 miles per gallon, $4.5/gallon
+
     def get_time(self, hour, is_weekday=True):
-        return self.ua.time_interpolator(hour,is_weekday) # unit is hour
+        return self.ua.time_interpolator(hour, is_weekday)  # unit is hour
+
     def get_cost(self, hour, is_weekday):
-        return self.inconvenience_fee + self.get_time(hour, is_weekday) * self.time_to_cost_factor + self.gas_cost
-    
+        return (
+            self.inconvenience_fee
+            + self.get_time(hour, is_weekday) * self.time_to_cost_factor
+            + self.gas_cost
+        )
+
+
 class Population:
     def __init__(self, car_percent: float):
         self.car_percent = car_percent
+
+
 class Personas(ABC):
     def __init__(self, transportation_cost):
         self.transportation_cost = transportation_cost
+
     @abstractmethod
     def get_cost(self, time_to_money_conversion=0):
         pass
-        #return self.transportation_cost.get_cost() + self.transportation_cost.safety_cost + self.transportation_cost.time * time_to_money_conversion
+        # return self.transportation_cost.get_cost() + self.transportation_cost.safety_cost + self.transportation_cost.time * time_to_money_conversion
 
 
 class TimePrioritizer(Personas):
@@ -139,10 +170,15 @@ class TimePrioritizer(Personas):
             self.transportation_cost.get_cost()
             + self.transportation_cost.time * time_to_money_conversion
         )
+
+
 class MoneyPrioritizer(Personas):
     def get_cost(self, time_to_money_conversion=0):
         return self.transportation_cost.get_cost()
+
+
 class SafetyPrioritizer(Personas):
     def get_cost(self, time_to_money_conversion=0):
-        return self.transportation_cost.get_cost() + self.transportation_cost.safety_cost
-
+        return (
+            self.transportation_cost.get_cost() + self.transportation_cost.safety_cost
+        )
