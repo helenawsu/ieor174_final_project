@@ -15,7 +15,7 @@ This project was created as part of the **IEOR 174 Final Report** for **Fall 202
 
 ---
 
-🌐 Live Demo
+## 🌐 Live Demo
 
 You can view the live demo of the project [here](https://bart-uber-subsidy.streamlit.app/).
 
