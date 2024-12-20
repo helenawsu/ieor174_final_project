@@ -122,18 +122,30 @@ average_percent_without_subsidy = (
     / total_population * 100
 )
 
-st.write("### Results")
-st.write(f"**With Subsidy:** {average_percent_with_subsidy:.2f}%")
-st.write(f"**Without Subsidy:** {average_percent_without_subsidy:.2f}%")
+
 total_rides_no_sub = 30251
 total_rides = 30251 * (1 + average_percent_with_subsidy/100 - average_percent_without_subsidy/100)
-st.write(f"**Ridership With Subsidy:** {int(total_rides)}")
-st.write(f"**Ridership Without Subsidy:** {total_rides_no_sub}")
+
 increased_ridership= total_rides - total_rides_no_sub
 increased_revenue = (7.2 - subsidy) * increased_ridership
-st.write(f"**Ridership Increased:** {int(increased_ridership)}")
-st.write(f"**Revenue Increased:** ${int(increased_revenue)}")
 
+col1, col2, col3 = st.columns(3)
+
+# First row of results
+with col1:
+    st.metric("With Subsidy", f"{average_percent_with_subsidy:.2f}%")
+with col2:
+    st.metric("Without Subsidy", f"{average_percent_without_subsidy:.2f}%")
+with col3:
+    st.metric("Ridership Without Subsidy", f"{total_rides_no_sub}")
+
+# Second row of results
+with col1:
+    st.metric("Ridership With Subsidy", f"{int(total_rides)}")
+with col2:
+    st.metric("Ridership Increased", f"{int(increased_ridership)}")
+with col3:
+    st.metric("Revenue Increased", f"${int(increased_revenue)}")
 
 
 # streamlit map things
