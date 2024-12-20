@@ -72,14 +72,14 @@ with st.container():
     col1, col2 = st.columns(2)
     with col1:
         # keep in mind that the fare from BE to BK is only $7.2, no point going beyond 8
-        subsidy = st.slider("Subsidy Amount ($)", 0.0, 8.0, 0.0, step=0.01)
+        subsidy = st.slider("Subsidy Amount ($)", 0.0, 8.0, 4.0, step=0.01)
         time_to_money_conversion = st.slider("Time to Money Conversion ($/hour)", 0, 50, 25)
         car_pc = st.slider("Percentage of Population who own car (%)", 0.0, 1.0, 1 / 2, step=0.01)
 
     with col2:
         safety_cost = st.slider("Safety Cost ($)", 0, 50, 20)
         hour_of_day = st.slider("Hour of Day (5AM-21PM)", 5, 21, 17, step=1)
-        inconvenience_fee = st.slider("Driving Inconvenience Cost ($)", 0, 100, 20, step=1)
+        inconvenience_fee = st.slider("Driving Inconvenience Cost ($)", 0, 100, 30, step=1)
     is_weekday = st.checkbox("Is Weekday?", value=True)
     # if hour_of_day in [7, 8, 9, 16, 17, 18]:  # Highlight rush hours
     #     st.write(f"Selected Hour is Rush Hour 🚦")
@@ -92,9 +92,9 @@ ub = UberBartMix(time_to_money_conversion, neighborhoods['distance_to_berryessa_
 neighborhoods['cost_uber_all'] = ua.get_cost(hour_of_day, is_weekday)
 neighborhoods['cost_bart_uber'] = ub.get_cost() - subsidy
 neighborhoods['cost_bart_uber_no_subsidy'] = ub.get_cost() 
-neighborhoods['cost_drive'] = Drive(time_to_money_conversion, inconvenience_fee).get_cost(hour_of_day, is_weekday)
+neighborhoods['cost_drive'] = Drive(time_to_money_conversion, inconvenience_fee, neighborhoods['distance_to_berryessa_miles']).get_cost(hour_of_day, is_weekday)
 
-beta = 0.25 # emperically chosen it produces a reasonable logistic function
+beta = 0.3 # emperically chosen it produces a reasonable logistic function
 exp_bart_uber_mix = np.exp(-beta * neighborhoods['cost_bart_uber'])
 exp_bart_uber_no_subsidy = np.exp(-beta * neighborhoods['cost_bart_uber_no_subsidy'])
 exp_uber_all = np.exp(-beta * neighborhoods['cost_uber_all'])

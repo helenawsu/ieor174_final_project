@@ -7,7 +7,7 @@ import numpy as np
 from scipy.interpolate import Akima1DInterpolator
 
 class UberAll:
-    def __init__(self, time_to_cost_factor, distance=0):
+    def __init__(self, time_to_cost_factor, distance):
         # Start: Downtown San Jose
         # End: Downtown Berkeley BART station
         # Data range: Jan 6 - Jan 13
@@ -111,10 +111,10 @@ class UberBartMix():
         return self.safety_cost + self.get_fare() + self.time_to_cost_factor * self.get_time()
     
 class Drive():
-    def __init__(self, time_to_cost_factor, inconvenience_fee):
+    def __init__(self, time_to_cost_factor, inconvenience_fee, distance):
         self.time_to_cost_factor = time_to_cost_factor
         self.inconvenience_fee = inconvenience_fee
-        self.ua = UberAll(self.time_to_cost_factor)
+        self.ua = UberAll(self.time_to_cost_factor, distance)
         self.gas_cost = 10 # At 50 miles, 23 miles per gallon, $4.5/gallon 
     def get_time(self, hour, is_weekday=True):
         return self.ua.time_interpolator(hour,is_weekday) # unit is hour
